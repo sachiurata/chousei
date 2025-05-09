@@ -25,9 +25,14 @@ function create_event($event_name, $event_description) {
         $stmt->close();
         return 1;
     } else {
+<<<<<<< HEAD
         $event_id = $stmt->insert_id; // 追加したイベントのIDを取得
         $stmt->close();
         return $event_id;
+=======
+        $stmt->close();
+        return 0;
+>>>>>>> ba6fb37601267f2323edefd774fdb3f3955fcde2
     }
 }
 
@@ -57,6 +62,7 @@ function get_event($event_id) {
     }
 }
 
+<<<<<<< HEAD
 // 1.3 イベントの更新
 function update_event($event_id, $event_name, $event_description) {
     global $conn;
@@ -98,6 +104,8 @@ function update_event($event_id, $event_name, $event_description) {
 //     }
 // }
 
+=======
+>>>>>>> ba6fb37601267f2323edefd774fdb3f3955fcde2
 // 2.1 新規候補日の作成
 function create_date($event_id, $date) {
     global $conn;
@@ -118,6 +126,7 @@ function create_date($event_id, $date) {
     }
 }
 
+<<<<<<< HEAD
 // 2.2 候補日の取得
 function get_date($date_id) {
     global $conn;
@@ -142,6 +151,10 @@ function get_date($date_id) {
 
 // 2.3 候補日IDの取得(複数)
 function get_date_ids($event_id) {
+=======
+// 2.2 候補日の取得(複数)
+function get_dates($event_id) {
+>>>>>>> ba6fb37601267f2323edefd774fdb3f3955fcde2
     global $conn;
 
     $stmt = $conn->prepare("SELECT date_id FROM dates WHERE event_id = ?");
@@ -167,7 +180,31 @@ function get_date_ids($event_id) {
     }
 }
 
+<<<<<<< HEAD
 
+=======
+// 2.3 候補日の取得
+function get_date($date_id) {
+    global $conn;
+
+    $stmt = $conn->prepare("SELECT date FROM dates WHERE date_id = ?");
+    if ($stmt === false) {
+        return 1;
+    }
+
+    $stmt->bind_param("i", $date_id);
+    
+    if ($stmt->execute() === false) {
+        $stmt->close();
+        return 1;
+    } else {
+        $stmt->bind_result($date);
+        $stmt->fetch();
+        $stmt->close();
+        return $date;
+    }
+}
+>>>>>>> ba6fb37601267f2323edefd774fdb3f3955fcde2
 
 // 3.1 新規参加情報の作成
 function create_attendance($date_id, $participant_id, $attendance) {
@@ -189,6 +226,7 @@ function create_attendance($date_id, $participant_id, $attendance) {
     }
 }
 
+<<<<<<< HEAD
 // 3.2 参加情報の取得
 function get_attendance($date_id, $participant_id) {
     global $conn;
@@ -258,6 +296,8 @@ function count_atttendance($date_id) {
     }
 }
 
+=======
+>>>>>>> ba6fb37601267f2323edefd774fdb3f3955fcde2
 // 4.1 新規参加者の作成
 function create_participant($participant_name, $comment) {
     global $conn;
@@ -277,6 +317,7 @@ function create_participant($participant_name, $comment) {
         return 0;
     }
 }
+<<<<<<< HEAD
 
 // 4.2 参加者の取得
 function get_participant($participant_id) {
@@ -353,3 +394,6 @@ function update_participant($participant_id, $participant_name, $comment) {
     }
 }
 ?>
+=======
+?>
+>>>>>>> ba6fb37601267f2323edefd774fdb3f3955fcde2
