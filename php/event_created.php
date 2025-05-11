@@ -1,3 +1,8 @@
+<?php
+$event_hash = $_GET['h'] ?? '';
+$url = "http://localhost:8080/event_view.php?h=" . urlencode($event_hash);
+?>
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -34,10 +39,10 @@
         以降、このURLページにて各自の出欠情報を入力してもらいます。
     </p>
 
-    <input type="text" class="form-control url-box mb-4" readonly value="http://localhost:8080/event_view.php?h=c6bf2ffb317a4feba88982af5a7667f9">
+    <input type="text" class="form-control url-box mb-4" readonly value="<?= htmlspecialchars($url) ?>">
 
     <div class="btn-wrapper">
-        <a href="event_view.php?h=c6bf2ffb317a4feba88982af5a7667f9" class="btn btn-primary btn-lg">イベントページを表示</a>
+        <a href="<?= htmlspecialchars($url) ?>" class="btn btn-primary btn-lg">イベントページを表示</a>
     </div>
 </div>
 
