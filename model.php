@@ -257,15 +257,15 @@ function count_atttendance($date_id) {
 }
 
 // 4.1 新規参加者の作成
-function create_participant($participant_name, $comment) {
+function create_participant($event_id, $participant_name, $comment) {
     global $conn;
 
-    $stmt = $conn->prepare("INSERT INTO participants (participant_name, comment) VALUES (?, ?)");
+    $stmt = $conn->prepare("INSERT INTO participants (event_id, participant_name, comment) VALUES (?, ?, ?)");
     if ($stmt === false) {
         return 1;
     }       
 
-    $stmt->bind_param("ss", $participant_name, $comment); 
+    $stmt->bind_param("iss", $event_id,$participant_name, $comment); 
 
     if ($stmt->execute() === false) {
         $stmt->close();
