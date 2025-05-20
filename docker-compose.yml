@@ -1,25 +1,32 @@
 version: '3.8'
+
 services:
-  web:
+  app:
     build:
       context: .
       dockerfile: .docker/Dockerfile
+    container_name: php-app
+    volumes:
+      - ./public:/var/www/html
+      - ./controller:/var/www/html/controller
+      - ./model:/var/www/html/model
+      - ./view:/var/www/html/view
+      - ./config:/var/www/html/config
     ports:
       - "8080:80"
-    volumes:
-      - ./php:/var/www/html
     depends_on:
       - db
 
   db:
     image: mysql:8.0
+    container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: chousei
       MYSQL_USER: user
       MYSQL_PASSWORD: password
     volumes:
-      - db_data:/var/lib/mysql
+      - db-data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
@@ -35,4 +42,4 @@ services:
       - db
 
 volumes:
-  db_data:
+  db-data:
