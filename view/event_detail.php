@@ -19,10 +19,12 @@
     </style>
   </head>
   <body>
+
     <div class="container">
       <div class="row mb-4">
         <h1 class="col-12 text-start border-bottom pb-2 mb-4">調整くん</h1>
       </div>
+
       <h2 class="mb-2 border-bottom" style="font-weight:bold;"><?= htmlspecialchars($eventData['event']['event_name']) ?></h2>
       <small>「出欠を入力する」ボタンから出欠を入力しましょう。</small><br><br>
       <h2 class="mb-2">イベント詳細説明</h2>
@@ -35,9 +37,14 @@
           <th>○</th>
           <th>△</th>
           <th>×</th>
-          <?php foreach($eventData['participants'] as $participant): ?>
-            <th><?= htmlspecialchars($participant['participant_name']) ?></th>
-          <?php endforeach; ?>
+            <?php foreach($eventData['participants'] as $participant): ?>
+              <th>
+                <!-- リンク表示 -->
+                <a href="index.php?action=attendance&event_id=<?= urlencode($eventData['event']['event_id']) ?>&user_id=<?= urlencode($participant['participant_id']) ?>&edit=1">
+                  <?= htmlspecialchars($participant['participant_name']) ?>
+                </a>
+              </th>
+            <?php endforeach; ?>
         </tr>
         <?php foreach($eventData['dates'] as $date): ?>
           <tr>
