@@ -42,7 +42,15 @@ class EventController {
 
     public function attendance_submit($event_id) {
     $event = new Event();
-    $event->saveAttendance($event_id, $_POST);
+    $result = $event->saveAttendance($event_id, $_POST);
+
+    if (!empty($result['errors'])) {
+        $eventData = $event->find($event_id);
+        $errors = $result['errors'];
+        require __DIR__ . '/../view/attendance_form.php';
+        return;
+    }
+
     header("Location: index.php?action=detail&event_id=" . urlencode($event_id));
     exit;
     }
