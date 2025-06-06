@@ -109,7 +109,7 @@
     <form action="index.php?action=attendance_submit&event_id=<?= urlencode($_GET['event_id']) ?>" method="post">
       <div class="mb-3">
         <label for="user_name" class="form-label">名前 <small>※空文字や「管理者」は使用できません。</small></label>
-        <input type="text" class="form-control" name="user_name" id="user_name" required>
+        <input type="text" class="form-control" name="user_name" id="user_name" value="<?= htmlspecialchars($_POST['user_name'] ?? '') ?>">
       </div>
       <div class="mb-3">
         <label class="form-label">日にち候補</label>
@@ -131,6 +131,13 @@
       <div class="mb-3 text-center">
         <button type="submit" class="btn btn-outline-dark btn-lg px-5">入力する</button>
       </div>
+      <?php if (!empty($errors)): ?>
+        <div class="text-danger text-center mb-3">
+          <?php foreach ($errors as $error): ?>
+            <div><?= htmlspecialchars($error) ?></div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </form>
     <!-- ▲ここまでフォーム▲ -->
   </div>
