@@ -1,34 +1,3 @@
- <!-- 編集モードに入るかどうかを判断（ヨウ） -->
- <?php
-require_once __DIR__ . '/../model/Event.php';
-$event = new Event();
-
-$event_id = $_GET['event_id'] ?? null;
-$edit_mode = isset($_GET['edit']) && $_GET['edit'] == '1';
-$user_id = $_GET['user_id'] ?? null;
-
-$name = '';
-$comment = '';
-$availability = [];
-
-$eventData = $event->find($event_id);
-
-if ($edit_mode && $event_id && $user_id) {
-    $existing = $event->getAttendance($event_id, $user_id);
-    if ($existing) {
-        $name = $existing['participant_name'];
-        $comment = $existing['comment'];
-        $availability = $existing['availability'];
-    }
-}
-
-//初期値があれば相応のボタンを選択
-function isSelected($availability, $date, $target) {
-    return (isset($availability[$date]) && $availability[$date] === $target) ? 'selected' : '';
-}
-?>
-
-
 <!doctype html>
 <html lang="ja">
 <head>
@@ -93,7 +62,7 @@ function isSelected($availability, $date, $target) {
         <th>△</th>
         <th>×</th>
         <?php foreach($eventData['participants'] as $participant): ?>
-          <th> <?= htmlspecialchars($participant['participant_name']) ?></th>
+          <th><?= htmlspecialchars($participant['participant_name']) ?></th>
         <?php endforeach; ?>
       </tr>
       <?php foreach($eventData['dates'] as $date): ?>
@@ -138,16 +107,9 @@ function isSelected($availability, $date, $target) {
     <h2 class="mb-2">出欠を入力する</h2>
     <!-- ▼ここからフォーム（既存のまま）▼ -->
     <form action="index.php?action=attendance_submit&event_id=<?= urlencode($_GET['event_id']) ?>" method="post">
-    <!-- 編集モードの値を送信（ヨウ） -->
-    <?php if ($edit_mode && $user_id): ?>
-      <input type="hidden" name="edit_mode" value="1">
-      <input type="hidden" name="user_id" value="<?= htmlspecialchars($user_id) ?>">
-    <?php endif; ?>
-
       <div class="mb-3">
         <label for="user_name" class="form-label">名前 <small>※空文字や「管理者」は使用できません。</small></label>
-        <!-- 編集モードなら、初期値を入力（ヨウ） -->
-        <input type="text" class="form-control" name="user_name" id="user_name" required value="<?= htmlspecialchars($name) ?>">
+        <input type="text" class="form-control" name="user_name" id="user_name" value="<?= htmlspecialchars($_POST['user_name'] ?? '') ?>">
       </div>
       <div class="mb-3">
         <label class="form-label">日にち候補</label>
@@ -155,29 +117,27 @@ function isSelected($availability, $date, $target) {
           <div class="mb-2">
             <span><?= htmlspecialchars($date['date']) ?></span>
             <input type="hidden" name="dates[]" value="<?= htmlspecialchars($date['date']) ?>">
-            <button type="button"
-              class="circle-btn <?= isSelected($availability, $date['date'], '1') ?>"
-              data-value="○">○</button>
-            <button type="button"
-              class="circle-btn <?= isSelected($availability, $date['date'], '2') ?>"
-              data-value="△">△</button>
-            <button type="button"
-              class="circle-btn <?= isSelected($availability, $date['date'], '0') ?>"
-              data-value="×">×</button>
-            <input type="hidden" name="attendance[]" value="<?= htmlspecialchars($availability[$date['date_id']] ?? '0') ?>">
+            <button type="button" class="circle-btn" data-value="○">○</button>
+            <button type="button" class="circle-btn" data-value="△">△</button>
+            <button type="button" class="circle-btn" data-value="×">×</button>
+            <input type="hidden" name="attendance[]" value="">
           </div>
         <?php endforeach; ?>
       </div>
       <div class="mb-3">
         <label for="comment" class="form-label">コメント</label>
-        <input type="text" class="form-control" name="comment" id="comment" value="<?= htmlspecialchars($comment) ?>">
+        <input type="text" class="form-control" name="comment" id="comment">
       </div>
       <div class="mb-3 text-center">
-        <button type="submit" class="btn btn-outline-dark btn-lg px-5" > 
-          <!-- ボタン仕様変更 -->
-          <?= $edit_mode ? '編集する' : '入力する' ?>
-      </button>
+        <button type="submit" class="btn btn-outline-dark btn-lg px-5">入力する</button>
       </div>
+      <?php if (!empty($errors)): ?>
+        <div class="text-danger text-center mb-3">
+          <?php foreach ($errors as $error): ?>
+            <div><?= htmlspecialchars($error) ?></div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </form>
     <!-- ▲ここまでフォーム▲ -->
   </div>

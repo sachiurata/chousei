@@ -91,34 +91,26 @@ class Event {
         $comment = trim($data['comment'] ?? '');
         $dates = $data['dates'] ?? [];
         $attendances = $data['attendance'] ?? [];
-        //編集モードを追加（ヨウ）
-        $edit_mode = $data['edit_mode'] ?? false;
-        $user_id = $data['user_id'] ?? null;
+
+        // バリデーション
+        $errors = [];
+        if (mb_strlen($user_name) < 1) $errors[] = "参加者名は必須です。";
+        if (mb_strlen($user_name) > 20) $errors[] = "参加者名は20文字以内で入力してください。";
+        if (mb_strlen($comment) > 100) $errors[] = "コメントは100文字以内で入力してください。";
+        // 必要なら他のバリデーションもここに追加
+
+        if ($errors) {
+            return ['errors' => $errors];
+        }
 
         // 1. 参加者を登録
-        //判断を追加（ヨウ）
-        if ($edit_mode && $user_id) {
-            // 更新既存の参加者情報
-            $stmt = $conn->prepare("UPDATE participants SET participant_name = ?, comment = ? WHERE participant_id = ?");
-            $stmt->bind_param("ssi", $user_name, $comment, $user_id);
-            $stmt->execute();
-            $participant_id = $user_id;
-        
-            // 古い出欠データを削除
-            $stmt = $conn->prepare("DELETE FROM attendances WHERE participant_id = ?");
-            $stmt->bind_param("i", $participant_id);
-            $stmt->execute();
-        } else {
-            // 新規参加者として追加
-            $stmt = $conn->prepare("INSERT INTO participants (event_id, participant_name, comment) VALUES (?, ?, ?)");
-            $stmt->bind_param("iss", $event_id, $user_name, $comment);
-            $stmt->execute();
-            $participant_id = $stmt->insert_id;
-        }
+        $stmt = $conn->prepare("INSERT INTO participants (event_id, participant_name, comment) VALUES (?, ?, ?)");
+        $stmt->bind_param("iss", $event_id, $user_name, $comment);
+        $stmt->execute();
+        $participant_id = $stmt->insert_id;
 
         // 2. 各日程の出欠を登録
         foreach ($dates as $i => $date_str) {
-            // date_idを取得
             $stmt_date = $conn->prepare("SELECT date_id FROM dates WHERE event_id = ? AND date = ?");
             $stmt_date->bind_param("is", $event_id, $date_str);
             $stmt_date->execute();
@@ -126,7 +118,6 @@ class Event {
             if (!$result) continue;
             $date_id = $result['date_id'];
 
-            // 出欠値をDB用に変換（○:1, △:2, ×:0）
             $att = $attendances[$i] ?? '';
             if ($att === '○') $att_val = '1';
             elseif ($att === '△') $att_val = '2';
@@ -137,47 +128,6 @@ class Event {
             $stmt_att->bind_param("iis", $date_id, $participant_id, $att_val);
             $stmt_att->execute();
         }
+        return [];
     }
-
-    // 個人出欠データの存在状態を判断（ヨウ）
-    public function getAttendance($event_id, $user_id) {
-        global $conn;
-    
-        // 参加者名とコメントを取得
-        $stmt = $conn->prepare("SELECT participant_name, comment FROM participants WHERE event_id = ? AND participant_id = ?");
-        $stmt->bind_param("ii", $event_id, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $participant = $result->fetch_assoc();
-        $stmt->close();
-    
-        if (!$participant) {
-            return null; // データが存在しない
-        }
-    
-        // 出欠データを取得
-        $stmt = $conn->prepare("
-            SELECT d.date, a.attendance
-            FROM attendances a
-            JOIN dates d ON a.date_id = d.date_id
-            WHERE d.event_id = ? AND a.participant_id = ?
-        ");
-        $stmt->bind_param("ii", $event_id, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-    
-        $availability = [];
-        while ($row = $result->fetch_assoc()) {
-            $availability[$row['date']] = $row['attendance'];
-        }
-        $stmt->close();
-    
-        return [
-            'participant_name' => $participant['participant_name'],
-            'comment' => $participant['comment'],
-            'availability' => $availability
-        ];
-    }
-    
-    
 }
