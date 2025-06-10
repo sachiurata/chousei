@@ -136,6 +136,44 @@ class EventController {
             $errors[] = "コメントは100文字以内で入力してください。";
         }
 
+        //エラーがある場合
+        if (!empty($errors)) {
+            $event = get_event($event_id);
+            $date_ids = get_date_ids($event_id);
+            $dates = [];
+            foreach ($date_ids as $id) {
+                $dates[] = ['date_id' => $id, 'date' => get_date($id)];
+            }
+
+            // 出欠選択の旧入力値
+            $attendances = [];
+            foreach ($date_ids as $index => $date_id) {
+                $value = $_POST['attendance'][$index] ?? '';
+                $attendances[] = [
+                    'date_id' => $date_id,
+                    'attendance' => $value
+                ];
+            }
+
+            // ビューに渡す変数
+            $eventData = [
+                'event' => $event,
+                'dates' => $dates,
+                'participants' => [],
+                'attendances' => $attendances
+            ];
+
+            $old_input = [
+                'user_name' => $participant_name,
+                'comment' => $comment,
+                'attendance' => $_POST['attendance'] ?? []
+            ];
+
+            // エラー表示
+            require __DIR__ . '/../view/attendance_form.php';
+            return;
+        }
+
         // 正常処理
         $participant_id = create_participant($event_id, $participant_name, $comment);
         $map = ['○' => '1', '△' => '2', '×' => '0'];
@@ -167,7 +205,7 @@ class EventController {
         $participant_id = $postData['participant_id'];
         $name = $postData['name'];
         $comment = $postData['comment'];
-        $availability = $postData['availability'];
+        $availability = $_POST['availability'] ?? [];
 
         update_participant($participant_id, $name, $comment);
         update_availability($participant_id, $availability);
