@@ -158,6 +158,14 @@
       group.querySelectorAll('.circle-btn').forEach(btn => btn.classList.remove('selected'));
       radio.parentElement.classList.add('selected');
     }
+
+    // ページ読み込み時、既に選択されたボタンに selected を追加
+    window.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+        radio.closest('.circle-btn')?.classList.add('selected');
+      });
+    });
   </script>
+
 </body>
 </html>
