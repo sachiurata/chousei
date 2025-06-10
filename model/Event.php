@@ -92,6 +92,17 @@ class Event {
         $dates = $data['dates'] ?? [];
         $attendances = $data['attendance'] ?? [];
 
+        // バリデーション
+        $errors = [];
+        if (mb_strlen($user_name) < 1) $errors[] = "参加者名は必須です。";
+        if (mb_strlen($user_name) > 20) $errors[] = "参加者名は20文字以内で入力してください。";
+        if (mb_strlen($comment) > 100) $errors[] = "コメントは100文字以内で入力してください。";
+        // 必要なら他のバリデーションもここに追加
+
+        if ($errors) {
+            return ['errors' => $errors];
+        }
+
         // 1. 参加者を登録
         $stmt = $conn->prepare("INSERT INTO participants (event_id, participant_name, comment) VALUES (?, ?, ?)");
         $stmt->bind_param("iss", $event_id, $user_name, $comment);
@@ -100,7 +111,6 @@ class Event {
 
         // 2. 各日程の出欠を登録
         foreach ($dates as $i => $date_str) {
-            // date_idを取得
             $stmt_date = $conn->prepare("SELECT date_id FROM dates WHERE event_id = ? AND date = ?");
             $stmt_date->bind_param("is", $event_id, $date_str);
             $stmt_date->execute();
@@ -108,7 +118,6 @@ class Event {
             if (!$result) continue;
             $date_id = $result['date_id'];
 
-            // 出欠値をDB用に変換（○:1, △:2, ×:0）
             $att = $attendances[$i] ?? '';
             if ($att === '○') $att_val = '1';
             elseif ($att === '△') $att_val = '2';
@@ -119,5 +128,6 @@ class Event {
             $stmt_att->bind_param("iis", $date_id, $participant_id, $att_val);
             $stmt_att->execute();
         }
+        return [];
     }
 }
