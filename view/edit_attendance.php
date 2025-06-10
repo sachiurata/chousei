@@ -129,7 +129,7 @@
               <?= htmlspecialchars(get_date($date_id)) ?>
             </div>
             <!-- 値を取得、対応するボタンをハイライト表示 -->
-            <?php foreach (['2' => '○', '1' => '△', '0' => '×'] as $val => $label): ?>
+            <?php foreach (['1' => '○', '2' => '△', '0' => '×'] as $val => $label): ?>
               <!-- ↓　===はダメ、型が違う -->
               <label class="circle-btn <?= ($selected == $val) ? 'selected' : '' ?>">
                 <input type="radio" name="availability[<?= $date_id ?>]" value="<?= $val ?>" class="d-none"
