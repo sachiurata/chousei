@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../model/Event.php';
+require_once __DIR__ . '/../model/model.php';
 
 class EventController {
     public function form() {
@@ -7,20 +7,24 @@ class EventController {
     }
 
     public function create() {
-        $event = new Event();
-        $result = $event->create($_POST);
+        if (isset($_POST['event']) && isset($_POST['description'])) {
+            $event_id = create_event($_POST['event'], $_POST['description']);
 
-        // バリデーションエラーがあればフォームに戻す
-        if (isset($result['errors'])) {
-            $errors = $result['errors'];
-            // エラーと入力値をビューに渡す
-            require __DIR__ . '/../view/event_form.php';
-            return;
+            if (!empty($_POST['candidates'])) {
+                $lines = explode("\n", $_POST['candidates']);
+                foreach ($lines as $line) {
+                    $date = trim($line);
+                    if ($date !== "") {
+                        create_date($event_id, $date);
+                    }
+                }
+            }
+
+            header("Location: index.php?action=url&event_id=$event_id");
+            exit;
+        } else {
+            echo "イベント名または説明文が不足しています。";
         }
-
-        $event_id = $result['event_id'];
-        header("Location: index.php?action=url&event_id=$event_id");
-        exit;
     }
 
     public function url($event_id) {
@@ -29,29 +33,149 @@ class EventController {
     }
 
     public function detail($event_id) {
-        $event = new Event();
-        $eventData = $event->find($event_id); // ['event' => ..., 'dates' => ...]
+        $event = get_event($event_id);
+        if (!$event) {
+            echo "イベントが見つかりません。";
+            exit;
+        }
+
+        $date_ids = get_date_ids($event_id);
+        $dates = [];
+        foreach ($date_ids as $id) {
+            $dates[] = ['date_id' => $id, 'date' => get_date($id)];
+        }
+
+        $participant_ids = get_participant_ids($event_id);
+        $participants = [];
+        $attendances = [];
+
+        foreach ($participant_ids as $pid) {
+            $p = get_participant($pid);
+            if (!$p) continue;
+            $participants[] = $p;
+
+            foreach ($date_ids as $did) {
+                $a = get_attendance($did, $pid);
+                if ($a) {
+                    $attendances[] = [
+                        'date_id' => $did,
+                        'participant_id' => $pid,
+                        'attendance' => strval($a['attendance'])
+                    ];
+                }
+            }
+        }
+
+        $eventData = [
+            'event' => $event,
+            'dates' => $dates,
+            'participants' => $participants,
+            'attendances' => $attendances
+        ];
+
         require __DIR__ . '/../view/event_detail.php';
     }
 
     public function attendance($event_id) {
-    $event = new Event();
-    $eventData = $event->find($event_id);
-    require __DIR__ . '/../view/attendance_form.php';
+        $event = get_event($event_id);
+        if (!$event) {
+            echo "イベントが見つかりません。";
+            exit;
+        }
+
+        $date_ids = get_date_ids($event_id);
+        $dates = [];
+        foreach ($date_ids as $id) {
+            $dates[] = ['date_id' => $id, 'date' => get_date($id)];
+        }
+
+        $participant_ids = get_participant_ids($event_id);
+        $participants = [];
+        $attendances = [];
+
+        foreach ($participant_ids as $pid) {
+            $p = get_participant($pid);
+            if (!$p) continue;
+            $participants[] = $p;
+
+            foreach ($date_ids as $did) {
+                $a = get_attendance($did, $pid);
+                if ($a) {
+                    $attendances[] = [
+                        'date_id' => $did,
+                        'participant_id' => $pid,
+                        'attendance' => strval($a['attendance'])
+                    ];
+                }
+            }
+        }
+
+        $eventData = [
+            'event' => $event,
+            'dates' => $dates,
+            'participants' => $participants,
+            'attendances' => $attendances
+        ];
+
+        require __DIR__ . '/../view/attendance_form.php';
     }
 
     public function attendance_submit($event_id) {
-    $event = new Event();
-    $result = $event->saveAttendance($event_id, $_POST);
+        $participant_name = trim($_POST['user_name'] ?? '');
+        $comment = trim($_POST['comment'] ?? '');
+        $errors = [];
 
-    if (!empty($result['errors'])) {
-        $eventData = $event->find($event_id);
-        $errors = $result['errors'];
-        require __DIR__ . '/../view/attendance_form.php';
-        return;
+        // バリデーション
+        if (mb_strlen($participant_name) < 1 || $participant_name === '管理者') {
+            $errors[] = "参加者名は必須です。";
+        }
+        if (mb_strlen($participant_name) > 20) {
+            $errors[] = "参加者名は20文字以内で入力してください。";
+        }
+        if (mb_strlen($comment) > 100) {
+            $errors[] = "コメントは100文字以内で入力してください。";
+        }
+
+        // 正常処理
+        $participant_id = create_participant($event_id, $participant_name, $comment);
+        $map = ['○' => '1', '△' => '2', '×' => '0'];
+
+        $dates = get_date_ids($event_id);
+        foreach ($dates as $index => $date_id) {
+            $value = $_POST['attendance'][$index] ?? '';
+            if (isset($map[$value])) {
+                $att_val = (string)$map[$value];
+                create_attendance($date_id, $participant_id, $att_val);
+            }
+        }
+
+        header("Location: index.php?action=detail&event_id=" . urlencode($event_id));
+        exit;
     }
 
-    header("Location: index.php?action=detail&event_id=" . urlencode($event_id));
-    exit;
+    //出欠情報閲覧の際にデータをGET
+    public function editAttendance($event_id, $user_id) {
+        $event = get_event($event_id);
+        $dates = get_date_ids($event_id);
+        $participant = get_participant_data($event_id, $user_id); 
+
+        require __DIR__ . '/../view/edit_attendance.php';
     }
+
+    //出欠情報更新の際にデータをPOST
+    public function updateAttendance($postData) {
+        $participant_id = $postData['participant_id'];
+        $name = $postData['name'];
+        $comment = $postData['comment'];
+        $availability = $postData['availability'];
+
+        update_participant($participant_id, $name, $comment);
+        update_availability($participant_id, $availability);
+
+        header("Location: index.php?action=detail&event_id=" . $postData['event_id']);
+        exit;
+    }
+
+    
+
 }
