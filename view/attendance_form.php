@@ -126,7 +126,7 @@
       </div>
       <div class="mb-3">
         <label for="comment" class="form-label">コメント</label>
-        <input type="text" class="form-control" name="comment" id="comment">
+        <input type="text" class="form-control" name="comment" id="comment" value="<?= htmlspecialchars($_POST['comment'] ?? '') ?>">
       </div>
       <div class="mb-3 text-center">
         <button type="submit" class="btn btn-outline-dark btn-lg px-5">入力する</button>
