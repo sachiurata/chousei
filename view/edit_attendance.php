@@ -159,5 +159,6 @@
       radio.parentElement.classList.add('selected');
     }
   </script>
+
 </body>
 </html>

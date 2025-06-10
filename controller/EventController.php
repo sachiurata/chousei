@@ -205,7 +205,7 @@ class EventController {
         $participant_id = $postData['participant_id'];
         $name = $postData['name'];
         $comment = $postData['comment'];
-        $availability = $postData['availability'];
+        $availability = $_POST['availability'] ?? [];
 
         update_participant($participant_id, $name, $comment);
         update_availability($participant_id, $availability);
