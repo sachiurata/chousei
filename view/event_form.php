@@ -76,7 +76,7 @@
         $( "#datepicker" ).datepicker( {
           firstDay: 1,
           minDate: 0,
-          maxDate: "+2m",
+          // maxDate: "+2m",
           dateFormat: "yyyy/mm/dd",
           onSelect: function(dateText, inst) {
           // YYYY/MM/DD形式
@@ -100,15 +100,15 @@
         errMsg.textContent = "";
 
         // 1. イベント名
-        const eventName = document.getElementById("event").value;
-        if (eventName.length < 1) {
-          errMsg.textContent = "イベント名は必須です。";
-        return;
-        }
-        if (eventName.length > 100) {
-          errMsg.textContent = "イベント名は100文字以内で入力してください。";
-        return;
-        }
+        // const eventName = document.getElementById("event").value;
+        // if (eventName.length < 1) {
+        //   errMsg.textContent = "イベント名は必須です。";
+        // return;
+        // }
+        // if (eventName.length > 100) {
+        //   errMsg.textContent = "イベント名は100文字以内で入力してください。";
+        // return;
+        // }
 
         // 2. 説明文（任意・300文字まで）
         const description = document.getElementById("description").value;

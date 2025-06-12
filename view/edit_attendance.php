@@ -87,7 +87,7 @@
       <?php
       $date_ids = get_date_ids($event['event_id']);
       foreach ($date_ids as $date_id):
-        $counts = ['2' => 0, '1' => 0, '0' => 0];
+        $counts = ['1' => 0, '2' => 0, '0' => 0];
         foreach ($participants as $p) {
           $att = get_attendance($date_id, $p['participant_id']);
           if ($att) $counts[$att['attendance']]++;
@@ -95,14 +95,14 @@
       ?>
         <tr>
           <td><?= htmlspecialchars(get_date($date_id)) ?></td>
-          <td><?= $counts['2'] ?></td>
           <td><?= $counts['1'] ?></td>
+          <td><?= $counts['2'] ?></td>
           <td><?= $counts['0'] ?></td>
           <?php foreach ($participants as $p): ?>
             <td>
               <?php
                 $att = get_attendance($date_id, $p['participant_id']);
-                echo $att ? ['×','△','○'][$att['attendance']] : '';
+                echo $att ? ['×','○','△'][$att['attendance']] : '';
               ?>
             </td>
           <?php endforeach; ?>
