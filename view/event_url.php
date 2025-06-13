@@ -19,7 +19,7 @@
         <small>イベントが作成されました。以下のURLをメール等を使って皆に知らせてあげよう。</small><br>
         <small>以降、このURLページにて各自の出欠情報を入力してもらいます。</small><br>
       </div>
-      <input type="text" id="eventUrlInput" class="event-url-input form-control" readonly value="<?= htmlspecialchars($event_url ?? '') ?>">
+      <input type="text" id="eventUrlInput" class="event-url-input form-control" readonly value="<?= htmlspecialchars($event_url ?? '#') ?>">
       <div class="row mt-4">
         <div class="col-12 text-center">
           <a id="eventPageBtn" class="btn btn-outline-dark btn-lg px-5" href="<?= htmlspecialchars($event_url ?? '#') ?>">イベントページを表示</a>

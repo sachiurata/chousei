@@ -6,31 +6,83 @@ class EventController {
         require __DIR__ . '/../view/event_form.php';
     }
 
-    public function create() {
-        if (isset($_POST['event']) && isset($_POST['description'])) {
-            $event_id = create_event($_POST['event'], $_POST['description']);
-
-            if (!empty($_POST['candidates'])) {
-                $lines = explode("\n", $_POST['candidates']);
-                foreach ($lines as $line) {
-                    $date = trim($line);
-                    if ($date !== "") {
-                        create_date($event_id, $date);
-                    }
-                }
-            }
-
-            header("Location: index.php?action=url&event_id=$event_id");
-            exit;
-        } else {
-            echo "イベント名または説明文が不足しています。";
-        }
+    //不正の期日かどうかを確認
+    function is_valid_date($date_str) {
+        $dt = DateTime::createFromFormat('Y-m-d', $date_str);
+        return $dt && $dt->format('Y-m-d') === $date_str;
     }
+
+    public function create() {
+        global $conn;
+    
+        $event_name = trim($_POST['event'] ?? '');
+        $event_description = trim($_POST['description'] ?? '');
+        $candidates = trim($_POST['candidates'] ?? '');
+    
+        // バリデーション
+        $errors = [];
+        if (mb_strlen(trim($event_name)) < 1) {$errors[] = "イベント名は必須です。空白のみは無効です。";}
+        if (mb_strlen($event_name) > 100) $errors[] = "イベント名は100文字以内で入力してください。";
+        if (mb_strlen($event_description) > 300) $errors[] = "説明文は300文字以内で入力してください。";
+    
+        $candidate_lines = array_filter(array_map('trim', explode("\n", $candidates)), fn($l) => $l !== '');
+        if (count($candidate_lines) < 1) $errors[] = "日程候補を1つ以上入力してください。";
+        if (count($candidate_lines) > 20) $errors[] = "日程候補は最大20件までです。";
+    
+        if ($errors) {
+            // view に渡してエラー表示を行う
+            require __DIR__ . '/../view/event_form.php';
+            return;
+        }
+    
+        // イベント登録
+        $stmt = $conn->prepare("INSERT INTO events (event_name, event_description) VALUES (?, ?)");
+        $stmt->bind_param("ss", $event_name, $event_description);
+        $stmt->execute();
+        $event_id = $stmt->insert_id;
+    
+        // 候補日登録
+        $stmt_date = $conn->prepare("INSERT INTO dates (event_id, date) VALUES (?, ?)");
+        foreach ($candidate_lines as $line) {
+
+            $cleaned = preg_replace('/[^\d\/]/', '', $line); 
+            $cleaned = str_replace('/', '-', $cleaned);
+        
+            $dt = DateTime::createFromFormat('Y-m-d', $cleaned);
+            if ($dt && $dt->format('Y-m-d') === $cleaned) {
+                $date_sql = $dt->format('Y-m-d');
+                $stmt_date->bind_param("is", $event_id, $date_sql);
+                $stmt_date->execute();
+            } else {
+                $errors[] = "不正な日付形式です: $line";
+            }
+        }
+
+        if (!empty($errors)) {
+            require __DIR__ . '/../view/event_form.php';
+            return;
+        }
+        
+        
+        // Cookie 保存（作成者識別）
+        setcookie("event_creator_$event_id", "1", time() + 60*60*24*30, "/");
+    
+        // URL 通知画面へ遷移
+        header("Location: index.php?action=url&event_id=$event_id");
+        exit;
+    }
+    
 
     public function url($event_id) {
-        $event_url = "index.php?action=detail&event_id=" . urlencode($event_id);
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+        $host = $_SERVER['HTTP_HOST'];
+        $path = "/index.php?action=detail&event_id=" . urlencode($event_id);
+    
+        $event_url = $protocol . $host . $path;
+    
         require __DIR__ . '/../view/event_url.php';
     }
+    
 
     public function detail($event_id) {
         $event = get_event($event_id);
